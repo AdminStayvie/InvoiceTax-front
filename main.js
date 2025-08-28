@@ -46,6 +46,37 @@ function showStatusModal(title, message, isSuccess) {
     feather.replace();
 }
 
+function confirmDelete(id, name) {
+    const content = `
+        <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md text-center">
+            <div class="mb-4"><i data-feather="alert-triangle" class="w-16 h-16 text-yellow-500 mx-auto"></i></div>
+            <h3 class="text-xl font-bold mb-2">Konfirmasi Hapus</h3>
+            <p class="text-gray-600 mb-6">Apakah Anda yakin ingin menghapus invoice untuk <strong>${name}</strong>?</p>
+            <div class="flex justify-center gap-4">
+                <button onclick="hideModal()" class="w-full bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Batal</button>
+                <button id="confirm-delete-btn" class="w-full bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700">Ya, Hapus</button>
+            </div>
+        </div>
+    `;
+    showModal('confirm-modal', content);
+    feather.replace();
+    document.getElementById('confirm-delete-btn').onclick = () => deleteInvoice(id);
+}
+
+async function deleteInvoice(id) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/invoices/${id}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error('Gagal menghapus invoice.');
+        hideModal();
+        showStatusModal('Sukses', 'Invoice berhasil dihapus.', true);
+        fetchInvoices();
+    } catch (error) {
+        hideModal();
+        showStatusModal('Gagal', error.message, false);
+    }
+}
+
+
 // --- ROUTER & NAVIGATION ---
 const routes = {
     '/': renderInvoiceTable,
@@ -144,7 +175,10 @@ async function fetchInvoices() {
                 <td class="p-4">${formatTanggal(inv.tanggalInvoice)}</td>
                 <td class="p-4 font-semibold">${formatRupiah(inv.items.reduce((sum, i) => sum + i.total, 0))}</td>
                 <td class="p-4">
-                    <button onclick="showInvoiceModal('${inv._id}')" class="text-gray-400 hover:text-brand-green"><i data-feather="printer" class="w-5 h-5"></i></button>
+                    <div class="flex items-center gap-2">
+                        <button onclick="showInvoiceModal('${inv._id}')" class="text-gray-400 hover:text-brand-green" title="Print Invoice"><i data-feather="printer" class="w-5 h-5"></i></button>
+                        <button onclick="confirmDelete('${inv._id}', '${inv.namaKlien}')" class="text-gray-400 hover:text-red-600" title="Hapus Invoice"><i data-feather="trash-2" class="w-5 h-5"></i></button>
+                    </div>
                 </td>
             </tr>
         `).join('') : `<tr><td colspan="5" class="text-center py-10 text-gray-500">Tidak ada data.</td></tr>`;
@@ -163,6 +197,10 @@ function renderForm() {
                     <div>
                         <label for="namaKlien" class="form-label">Nama Klien</label>
                         <input type="text" id="namaKlien" name="namaKlien" class="form-input" required>
+                    </div>
+                     <div>
+                        <label for="noTelepon" class="form-label">No. Telepon</label>
+                        <input type="tel" id="noTelepon" name="noTelepon" class="form-input" required>
                     </div>
                     <div>
                         <label for="tanggalInvoice" class="form-label">Tanggal Invoice</label>
@@ -237,6 +275,7 @@ function attachFormEventListeners() {
 
         const data = {
             namaKlien: document.getElementById('namaKlien').value,
+            noTelepon: document.getElementById('noTelepon').value,
             tanggalInvoice: document.getElementById('tanggalInvoice').value,
             items: items
         };
@@ -274,7 +313,7 @@ async function showInvoiceModal(id) {
                             <div>
                                 <h1 class="text-2xl font-bold text-brand-dark">Tax Plus Indonesia</h1>
                                 <p class="text-sm text-gray-500">Jl. Dinoyo 131-133 Surabaya, 60265</p>
-                                <p class="text-sm text-gray-500">@taxplus.id | taxplus.idn@gmail.com | +62822-2340-2300</p>
+                                <p class="text-sm text-gray-500">@stay.vie | www.stayvie.com | 0822-2122-3100</p>
                             </div>
                         </div>
                         <div class="text-right">
@@ -286,6 +325,7 @@ async function showInvoiceModal(id) {
                         <div>
                             <p class="text-sm text-gray-500">Ditagihkan kepada:</p>
                             <p class="text-lg font-bold text-gray-800">${data.namaKlien}</p>
+                            <p class="text-sm text-gray-600">${data.noTelepon || ''}</p>
                         </div>
                         <div class="text-right">
                             <p class="text-sm text-gray-500">Tanggal:</p>
@@ -340,5 +380,3 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('hashchange', router);
     router();
 });
-
-
