@@ -274,7 +274,7 @@ async function showInvoiceModal(id) {
                             <div>
                                 <h1 class="text-2xl font-bold text-brand-dark">Tax Plus Indonesia</h1>
                                 <p class="text-sm text-gray-500">Jl. Dinoyo 131-133 Surabaya, 60265</p>
-                                <p class="text-sm text-gray-500">@stay.vie | www.stayvie.com | 0822-2122-3100</p>
+                                <p class="text-sm text-gray-500">@taxplus.id | taxplus.idn@gmail.com | +62822-2340-2300</p>
                             </div>
                         </div>
                         <div class="text-right">
