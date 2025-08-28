@@ -1,5 +1,5 @@
 // --- KONFIGURASI PENTING ---
-const API_BASE_URL = 'https://invtax-backend.stayvie.com/api'; // Ganti dengan URL backend Anda setelah deploy
+const API_BASE_URL = 'http://skgogsooooo0cckcg8sk0ok8.148.230.97.197.sslip.io//api'; // Ganti dengan URL backend Anda setelah deploy
 
 // --- State Aplikasi ---
 const appState = {
