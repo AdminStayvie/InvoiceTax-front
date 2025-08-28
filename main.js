@@ -1,5 +1,5 @@
 // --- KONFIGURASI PENTING ---
-const API_BASE_URL = 'http://localhost:3002/api'; // Ganti dengan URL backend Anda setelah deploy
+const API_BASE_URL = 'https://invtax-backend.stayvie.com/api'; // Ganti dengan URL backend Anda setelah deploy
 
 // --- State Aplikasi ---
 const appState = {
