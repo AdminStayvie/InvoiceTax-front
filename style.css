@@ -1,0 +1,99 @@
+/* style.css untuk Tax Plus */
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.loader { 
+    border: 5px solid #E2E8F0; /* gray-200 */
+    border-top: 5px solid #4A5568; /* brand-dark */
+    border-radius: 50%; 
+    width: 40px; 
+    height: 40px; 
+    animation: spin 1s linear infinite; 
+}
+
+@keyframes spin { 
+    0% { transform: rotate(0deg); } 
+    100% { transform: rotate(360deg); } 
+}
+
+.form-label {
+    display: block;
+    font-size: 0.875rem; /* text-sm */
+    font-weight: 500;    /* font-medium */
+    margin-bottom: 0.25rem; /* mb-1 */
+    color: #4B5563;      /* text-gray-700 */
+}
+
+.form-input {
+    background-color: #F9FAFB; /* bg-gray-50 */
+    border: 1px solid #D1D5DB; /* border-gray-300 */
+    color: #111827; /* text-gray-900 */
+    font-size: 0.875rem; /* text-sm */
+    border-radius: 0.5rem; /* rounded-lg */
+    width: 100%; /* w-full */
+    display: block; /* block */
+    padding: 0.625rem; /* p-2.5 */
+    transition: color 0.2s, border-color 0.2s; /* transition-colors */
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #4A5568; /* brand-dark */
+    box-shadow: 0 0 0 2px #4A5568; /* focus:ring-brand-dark */
+}
+
+/* Print-specific styles */
+@media print {
+    @page {
+        size: A4;
+        margin: 0;
+    }
+
+    html, body {
+        margin: 0;
+        padding: 0;
+        background-color: #fff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    body * {
+        visibility: hidden;
+    }
+
+    #invoice-modal, #invoice-content, #invoice-modal * {
+        visibility: visible;
+    }
+
+    #invoice-modal {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        display: block;
+        overflow: visible;
+        background-color: #fff !important;
+    }
+    
+    #invoice-modal > div {
+        transform: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100%;
+    }
+
+    #invoice-content {
+        padding: 1.5cm;
+        font-size: 10pt;
+    }
+
+    .no-print {
+        display: none !important;
+    }
+}

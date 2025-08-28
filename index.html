@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tax Plus Indonesia - Invoice App</title>
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%234A5568%22/><text x=%2250%22 y=%2255%22 font-size=%2250%22 text-anchor=%22middle%22 fill=%22white%22 dy=%22.3em%22 font-family=%22sans-serif%22>T+</text></svg>">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        // Konfigurasi Tailwind CSS
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'brand-dark': '#4A5568', // Abu-abu gelap dari logo
+                        'brand-green': '#689F38', // Hijau dari logo
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="flex h-screen">
+        <!-- SIDEBAR NAVIGATION -->
+        <aside id="sidebar" class="w-64 bg-white shadow-lg flex-shrink-0 flex flex-col p-4 transition-all duration-300">
+            <!-- Konten sidebar akan di-inject oleh main.js -->
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main id="main-content" class="flex-1 p-4 md:p-8 overflow-y-auto">
+            <!-- Konten halaman akan di-inject di sini oleh main.js -->
+        </main>
+    </div>
+    
+    <!-- Modals Container -->
+    <div id="modal-container">
+        <!-- Modal akan di-inject di sini -->
+    </div>
+
+    <!-- Main JavaScript File -->
+    <script src="main.js"></script>
+</body>
+</html>
