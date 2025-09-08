@@ -358,7 +358,17 @@ async function showInvoiceModal(id) {
                             </tr>
                         </tfoot>
                     </table>
-                    <footer class="text-center text-sm text-gray-500">
+
+                    <div class="mt-10 pt-6 border-t border-gray-200">
+                        <h3 class="text-sm font-semibold text-gray-600 mb-2">Tujuan Pembayaran:</h3>
+                        <div class="text-sm text-gray-800 leading-relaxed">
+                            <p><span class="font-semibold w-24 inline-block">Bank</span>: BCA</p>
+                            <p><span class="font-semibold w-24 inline-block">No. Rekening</span>: 4649989980</p>
+                            <p><span class="font-semibold w-24 inline-block">Atas Nama</span>: Octavianus Stevie Lianto</p>
+                        </div>
+                    </div>
+
+                    <footer class="text-center text-sm text-gray-500 mt-10">
                         <p>Terima kasih atas kepercayaan Anda.</p>
                     </footer>
                 </div>
