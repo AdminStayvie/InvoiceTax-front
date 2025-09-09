@@ -25,7 +25,7 @@
                     colors: {
                         'brand-dark': '#4A5568', // Abu-abu gelap dari logo
                         'brand-green': '#689F38', // Hijau dari logo
-                        'brand-gold': '#CBB284', // Biru untuk Stay.vie
+                        'brand-gold': '#CBB284', // Emas untuk Stay.vie
                     }
                 }
             }
@@ -40,9 +40,7 @@
 
         .loader {
             border: 5px solid #E2E8F0;
-            /* gray-200 */
             border-top: 5px solid #4A5568;
-            /* brand-dark */
             border-radius: 50%;
             width: 40px;
             height: 40px;
@@ -50,110 +48,88 @@
         }
 
         @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-            100% {
-                transform: rotate(360deg);
-            }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         .form-label {
-            display: block;
-            font-size: 0.875rem;
-            /* text-sm */
-            font-weight: 500;
-            /* font-medium */
-            margin-bottom: 0.25rem;
-            /* mb-1 */
-            color: #4B5563;
-            /* text-gray-700 */
+            display: block; font-size: 0.875rem; font-weight: 500;
+            margin-bottom: 0.25rem; color: #4B5563;
         }
 
         .form-input {
-            background-color: #F9FAFB;
-            /* bg-gray-50 */
-            border: 1px solid #D1D5DB;
-            /* border-gray-300 */
-            color: #111827;
-            /* text-gray-900 */
-            font-size: 0.875rem;
-            /* text-sm */
-            border-radius: 0.5rem;
-            /* rounded-lg */
-            width: 100%;
-            /* w-full */
-            display: block;
-            /* block */
-            padding: 0.625rem;
-            /* p-2.5 */
+            background-color: #F9FAFB; border: 1px solid #D1D5DB;
+            color: #111827; font-size: 0.875rem; border-radius: 0.5rem;
+            width: 100%; display: block; padding: 0.625rem;
             transition: color 0.2s, border-color 0.2s;
-            /* transition-colors */
         }
 
         .form-input:focus {
-            outline: none;
-            border-color: #4A5568;
-            /* brand-dark */
-            box-shadow: 0 0 0 2px #4A5568;
-            /* focus:ring-brand-dark */
+            outline: none; border-color: #4A5568;
+            box-shadow: 0 0 0 2px rgba(74, 85, 104, 0.4);
         }
+        
+        .paid-stamp {
+            position: absolute;
+            top: 60px;
+            right: 40px;
+            color: #38A169;
+            border: 5px solid #38A169;
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            transform: rotate(15deg);
+            opacity: 0.8;
+            letter-spacing: 0.1em;
+            pointer-events: none;
+        }
+
+        .paid-checkbox {
+            -webkit-appearance: none; appearance: none;
+            background-color: #fff; margin: 0; font: inherit;
+            color: currentColor; width: 1.15em; height: 1.15em;
+            border: 0.15em solid #9CA3AF; border-radius: 0.25em;
+            transform: translateY(-0.075em);
+            display: grid; place-content: center;
+            cursor: pointer; transition: 120ms all ease-in-out;
+        }
+        .paid-checkbox:hover { border-color: #4A5568; }
+        .paid-checkbox:checked { border-color: #689F38; }
+
+        .paid-checkbox::before {
+            content: ""; width: 0.65em; height: 0.65em;
+            transform: scale(0); transition: 120ms transform ease-in-out;
+            box-shadow: inset 1em 1em #689F38;
+            transform-origin: bottom left;
+            clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+        }
+
+        .paid-checkbox:checked::before { transform: scale(1); }
+
 
         /* Print-specific styles */
         @media print {
-            @page {
-                size: A4;
-                margin: 0;
+            @page { size: A4; margin: 0; }
+            html, body {
+                margin: 0; padding: 0; background-color: #fff !important;
+                -webkit-print-color-adjust: exact; print-color-adjust: exact;
             }
-
-            html,
-            body {
-                margin: 0;
-                padding: 0;
-                background-color: #fff !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-
-            body * {
-                visibility: hidden;
-            }
-
-            #invoice-modal,
-            #invoice-content,
-            #invoice-modal * {
-                visibility: visible;
-            }
-
+            body * { visibility: hidden; }
+            #invoice-modal, #invoice-content, #invoice-modal * { visibility: visible; }
             #invoice-modal {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                height: 100%;
-                padding: 0;
-                display: block;
-                overflow: visible;
+                position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+                padding: 0; display: block; overflow: visible;
                 background-color: #fff !important;
             }
-
             #invoice-modal>div {
-                transform: none !important;
-                box-shadow: none !important;
-                border-radius: 0 !important;
-                width: 100% !important;
-                max-width: 100% !important;
-                height: 100%;
+                transform: none !important; box-shadow: none !important;
+                border-radius: 0 !important; width: 100% !important;
+                max-width: 100% !important; height: 100%;
             }
-
-            #invoice-content {
-                padding: 1.5cm;
-                font-size: 10pt;
-            }
-
-            .no-print {
-                display: none !important;
-            }
+            #invoice-content { padding: 1.5cm; font-size: 10pt; }
+            .no-print { display: none !important; }
         }
     </style>
 </head>
@@ -264,6 +240,34 @@
                 showStatusModal('Gagal', error.message, false);
             }
         }
+        
+        async function updateInvoiceStatus(id, type, isPaid) {
+            const newStatus = isPaid ? 'lunas' : 'belum lunas';
+            const row = document.querySelector(`[data-invoice-id="${id}"]`);
+            try {
+                const response = await fetch(`${API_BASE_URL}/invoices/${type}/${id}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                if (!response.ok) throw new Error('Gagal memperbarui status.');
+                // Update UI directly for faster feedback
+                if(row) {
+                    if (isPaid) {
+                        row.classList.add('bg-green-50');
+                    } else {
+                        row.classList.remove('bg-green-50');
+                    }
+                }
+            } catch (error) {
+                showStatusModal('Gagal', error.message, false);
+                // Revert checkbox state if API call fails
+                 if(row) {
+                    const checkbox = row.querySelector('.paid-checkbox');
+                    if(checkbox) checkbox.checked = !isPaid;
+                }
+            }
+        }
 
         // --- ROUTER & NAVIGATION ---
         const routes = {
@@ -345,8 +349,8 @@
                 <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md text-center">
                     <h3 class="text-xl font-bold mb-6">Pilih Jenis Invoice</h3>
                     <div class="flex flex-col gap-4">
-                        <button onclick="window.location.hash='/new/hotel'; hideModal();" class="w-full bg-brand-gold text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors">Invoice Kamar Hotel</button>
-                        <button onclick="window.location.hash='/new/taxplus'; hideModal();" class="w-full bg-brand-green text-white font-semibold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors">Invoice TaxPlus</button>
+                        <button onclick="window.location.hash='/new/hotel'; hideModal();" class="w-full bg-brand-gold text-white font-semibold py-3 px-4 rounded-lg hover:opacity-90 transition-opacity">Invoice Kamar Hotel</button>
+                        <button onclick="window.location.hash='/new/taxplus'; hideModal();" class="w-full bg-brand-green text-white font-semibold py-3 px-4 rounded-lg hover:opacity-90 transition-opacity">Invoice TaxPlus</button>
                     </div>
                     <button onclick="hideModal()" class="mt-6 text-sm text-gray-500 hover:underline">Batal</button>
                 </div>
@@ -409,13 +413,17 @@
                 appState.totalPages = pagination.totalPages;
 
                 tableBody.innerHTML = data.length ? data.map(inv => `
-                    <tr class="bg-white border-b hover:bg-gray-50">
+                    <tr class="border-b hover:bg-gray-50 ${inv.status === 'lunas' ? 'bg-green-50' : 'bg-white'}" data-invoice-id="${inv._id}">
                         <td class="p-4 font-semibold text-gray-900">${inv.nomorInvoice}</td>
                         <td class="p-4">${inv.namaKlien}</td>
                         <td class="p-4">${formatTanggal(inv.tanggalInvoice)}</td>
                         <td class="p-4 font-semibold">${formatRupiah(inv.items.reduce((sum, i) => sum + i.total, 0))}</td>
                         <td class="p-4">
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-4">
+                                <label class="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-600" title="Tandai sebagai Lunas">
+                                    <input type="checkbox" onchange="updateInvoiceStatus('${inv._id}', '${type}', this.checked)" class="paid-checkbox" ${inv.status === 'lunas' ? 'checked' : ''}>
+                                    Lunas
+                                </label>
                                 <button onclick="showInvoiceModal('${inv._id}', '${type}')" class="text-gray-400 hover:text-brand-green" title="Print Invoice"><i data-feather="printer" class="w-5 h-5"></i></button>
                                 <button onclick="confirmDelete('${inv._id}', '${inv.namaKlien}', '${type}')" class="text-gray-400 hover:text-red-600" title="Hapus Invoice"><i data-feather="trash-2" class="w-5 h-5"></i></button>
                             </div>
@@ -555,6 +563,10 @@
                 const isHotel = type === 'hotel';
                 const logoUrl = isHotel ? `${API_BASE_URL.replace('/api', '')}/Logo_stayvie.png` : `${API_BASE_URL.replace('/api', '')}/Logo.png`;
                 
+                const paidStamp = data.status === 'lunas'
+                    ? `<div class="paid-stamp">Paid</div>`
+                    : '';
+
                 const headerDetails = isHotel ?
                     `<div>
                         <h1 class="text-2xl font-bold text-brand-gold">Stay.vie Hotel & Co-Living</h1>
@@ -582,7 +594,8 @@
 
                 const content = `
                     <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl">
-                        <div id="invoice-content" class="p-10">
+                        <div id="invoice-content" class="p-10 relative overflow-hidden">
+                            ${paidStamp}
                             <header class="flex justify-between items-start mb-10">
                                 <div class="flex items-center gap-5">
                                     <img src="${logoUrl}" alt="Logo" class="h-20">
