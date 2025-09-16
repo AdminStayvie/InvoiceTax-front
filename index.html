@@ -518,11 +518,15 @@
         
         async function addPayment(id, type) {
             const amountInput = document.getElementById('new-payment-amount');
+            const dateInput = document.getElementById('new-payment-date');
             const amount = parseFloat(amountInput.value);
+            const date = dateInput.value;
 
             if (!amount || amount <= 0) {
-                showStatusModal('Gagal', 'Masukkan jumlah pembayaran yang valid.', false);
-                return;
+                showStatusModal('Gagal', 'Masukkan jumlah pembayaran yang valid.', false); return;
+            }
+            if (!date) {
+                showStatusModal('Gagal', 'Pilih tanggal pembayaran.', false); return;
             }
 
             const addButton = document.getElementById('add-payment-btn');
@@ -533,7 +537,7 @@
                 const response = await fetch(`${API_BASE_URL}/invoices/${type}/${id}/payment`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ amount: amount })
+                    body: JSON.stringify({ amount, date })
                 });
 
                 if (!response.ok) {
@@ -546,6 +550,23 @@
 
             } catch(error) {
                 showStatusModal('Gagal', error.message, false);
+            }
+        }
+
+        async function deletePayment(invoiceId, type, paymentId) {
+             if (!confirm('Apakah Anda yakin ingin menghapus pembayaran ini?')) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/invoices/${type}/${invoiceId}/payment/${paymentId}`, {
+                    method: 'DELETE'
+                });
+                if (!response.ok) {
+                     const errorData = await response.json();
+                    throw new Error(errorData.message || 'Gagal menghapus pembayaran.');
+                }
+                await showInvoiceModal(invoiceId, type);
+                fetchInvoices(type);
+            } catch(error) {
+                 showStatusModal('Gagal', error.message, false);
             }
         }
 
@@ -597,6 +618,10 @@
 
                 const content = `
                     <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl">
+                         <div class="p-4 bg-gray-50 flex justify-end gap-3 no-print absolute top-0 right-0 rounded-tr-lg">
+                            <button onclick="hideModal()" class="bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Tutup</button>
+                            <button onclick="window.print()" class="bg-brand-green text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 flex items-center gap-2"><i data-feather="printer"></i> Print</button>
+                        </div>
                         <div id="invoice-content" class="p-10 relative overflow-hidden">
                             ${stamp}
                             <header class="flex justify-between items-start mb-10">
@@ -621,69 +646,85 @@
                                 </div>
                             </div>
                             
-                            <h3 class="text-sm font-semibold text-gray-600 mb-2 mt-10">Rincian Tagihan:</h3>
-                            <table class="w-full mb-4">
-                                <thead class="border-b-2 border-gray-300">
-                                    <tr>
-                                        <th class="text-left py-2 text-sm uppercase text-gray-500">Deskripsi</th>
-                                        <th class="text-right py-2 text-sm uppercase text-gray-500">Kuantitas</th>
-                                        <th class="text-right py-2 text-sm uppercase text-gray-500">Harga Satuan</th>
-                                        <th class="text-right py-2 text-sm uppercase text-gray-500">Jumlah</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${data.items.map(item => `
-                                        <tr class="border-b border-gray-100">
-                                            <td class="py-3">${item.deskripsi}</td>
-                                            <td class="text-right py-3">${item.kuantitas}</td>
-                                            <td class="text-right py-3">${formatRupiah(item.harga)}</td>
-                                            <td class="text-right py-3 font-semibold">${formatRupiah(item.total)}</td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                            
-                            <h3 class="text-sm font-semibold text-gray-600 mb-2 mt-8">Rincian Pembayaran:</h3>
-                             ${(data.payments && data.payments.length > 0) ? `
-                                <table class="w-full mb-10">
-                                    <thead class="border-b-2 border-gray-300">
-                                        <tr>
-                                            <th class="text-left py-2 text-sm uppercase text-gray-500">Tanggal</th>
-                                            <th class="text-left py-2 text-sm uppercase text-gray-500">Keterangan</th>
-                                            <th class="text-right py-2 text-sm uppercase text-gray-500">Jumlah</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        ${data.payments.map(p => `
-                                            <tr class="border-b border-gray-100">
-                                                <td class="py-2">${formatTanggal(p.date)}</td>
-                                                <td class="py-2">${p.notes}</td>
-                                                <td class="text-right py-2">${formatRupiah(p.amount)}</td>
+                           <div class="grid grid-cols-12 gap-8">
+                                <div class="col-span-8">
+                                     <h3 class="text-sm font-semibold text-gray-600 mb-2">Rincian Tagihan:</h3>
+                                    <table class="w-full mb-4">
+                                        <thead class="border-b-2 border-gray-300">
+                                            <tr>
+                                                <th class="text-left py-2 text-sm uppercase text-gray-500">Deskripsi</th>
+                                                <th class="text-right py-2 text-sm uppercase text-gray-500">Kuantitas</th>
+                                                <th class="text-right py-2 text-sm uppercase text-gray-500">Harga Satuan</th>
+                                                <th class="text-right py-2 text-sm uppercase text-gray-500">Jumlah</th>
                                             </tr>
-                                        `).join('')}
-                                    </tbody>
-                                </table>
-                            ` : `<p class="text-sm text-gray-500 mb-10">Belum ada pembayaran.</p>`}
+                                        </thead>
+                                        <tbody>
+                                            ${data.items.map(item => `
+                                                <tr class="border-b border-gray-100">
+                                                    <td class="py-3">${item.deskripsi}</td>
+                                                    <td class="text-right py-3">${item.kuantitas}</td>
+                                                    <td class="text-right py-3">${formatRupiah(item.harga)}</td>
+                                                    <td class="text-right py-3 font-semibold">${formatRupiah(item.total)}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                     <h3 class="text-sm font-semibold text-gray-600 mb-2 mt-8">Rincian Pembayaran:</h3>
+                                     ${(data.payments && data.payments.length > 0) ? `
+                                        <table class="w-full mb-10">
+                                            <thead class="border-b-2 border-gray-300">
+                                                <tr>
+                                                    <th class="text-left py-2 text-sm uppercase text-gray-500">Tanggal</th>
+                                                    <th class="text-left py-2 text-sm uppercase text-gray-500">Keterangan</th>
+                                                    <th class="text-right py-2 text-sm uppercase text-gray-500">Jumlah</th>
+                                                    <th class="text-right py-2 text-sm uppercase text-gray-500 no-print">Aksi</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                ${data.payments.map(p => `
+                                                    <tr class="border-b border-gray-100">
+                                                        <td class="py-2">${formatTanggal(p.date)}</td>
+                                                        <td class="py-2">${p.notes}</td>
+                                                        <td class="text-right py-2">${formatRupiah(p.amount)}</td>
+                                                        <td class="text-right py-2 no-print"><button onclick="deletePayment('${id}', '${type}', '${p._id}')" class="text-red-500 hover:text-red-700"><i data-feather="x" class="w-4 h-4"></i></button></td>
+                                                    </tr>
+                                                `).join('')}
+                                            </tbody>
+                                        </table>
+                                    ` : `<p class="text-sm text-gray-500 mb-10">Belum ada pembayaran.</p>`}
+                                </div>
+                                <div class="col-span-4 pt-8">
+                                    <div class="bg-gray-50 p-4 rounded-lg">
+                                        <table class="w-full">
+                                             <tfoot>
+                                                <tr>
+                                                    <td class="py-2 font-semibold">SUBTOTAL</td>
+                                                    <td class="text-right py-2 font-semibold w-2/5">${formatRupiah(total)}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="py-2 font-semibold">TOTAL DIBAYAR</td>
+                                                    <td class="text-right py-2 font-semibold text-green-600">${formatRupiah(totalPaid)}</td>
+                                                </tr>
+                                                <tr class="border-t-2 border-gray-200">
+                                                    <td class="py-4 font-bold text-lg">SISA TAGIHAN</td>
+                                                    <td class="text-right py-4 font-bold text-lg text-brand-dark">${formatRupiah(remaining)}</td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                    <div class="mt-4 no-print">
+                                    ${data.status !== 'lunas' ? `
+                                        <h4 class="text-sm font-semibold text-gray-600 mb-2">Tambah Pembayaran Baru</h4>
+                                        <div class="space-y-3">
+                                            <input type="number" id="new-payment-amount" placeholder="Nominal" class="form-input">
+                                            <input type="date" id="new-payment-date" value="${formatDateForInput(new Date())}" class="form-input">
+                                            <button id="add-payment-btn" onclick="addPayment('${id}', '${type}')" class="w-full bg-brand-dark text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-800">Simpan Pembayaran</button>
+                                        </div>
+                                    ` : `<p class="text-sm text-center font-semibold text-green-600 bg-green-50 p-3 rounded-lg">Invoice ini sudah lunas.</p>`}
+                                    </div>
+                                </div>
+                           </div>
 
-                            <div class="flex justify-end">
-                                <table class="w-full md:w-1/2">
-                                     <tfoot>
-                                        <tr>
-                                            <td class="text-right py-2 font-semibold">SUBTOTAL</td>
-                                            <td class="text-right py-2 font-semibold w-2/5">${formatRupiah(total)}</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="text-right py-2 font-semibold">TOTAL DIBAYAR</td>
-                                            <td class="text-right py-2 font-semibold text-green-600">${formatRupiah(totalPaid)}</td>
-                                        </tr>
-                                        <tr class="border-t-2 border-gray-300">
-                                            <td class="text-right py-4 font-bold text-lg">SISA TAGIHAN</td>
-                                            <td class="text-right py-4 font-bold text-lg text-brand-dark">${formatRupiah(remaining)}</td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-                            
                             <div class="mt-10 pt-6 border-t border-gray-200">
                                 <h3 class="text-sm font-semibold text-gray-600 mb-2">Tujuan Pembayaran:</h3>
                                 ${paymentDetails}
@@ -693,20 +734,7 @@
                                 <p>Terima kasih atas kepercayaan Anda.</p>
                             </footer>
                         </div>
-                        <div class="p-6 bg-gray-50 flex justify-between items-center gap-3 no-print">
-                            <div class="flex-1">
-                                ${data.status !== 'lunas' ? `
-                                <div class="flex items-center gap-2">
-                                    <input type="number" id="new-payment-amount" placeholder="Masukkan nominal pembayaran" class="form-input w-48">
-                                    <button id="add-payment-btn" onclick="addPayment('${id}', '${type}')" class="bg-brand-dark text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-800">Tambah Pembayaran</button>
-                                </div>
-                                ` : `<p class="text-sm font-semibold text-green-600">Invoice ini sudah lunas.</p>`}
-                            </div>
-                            <div>
-                                <button onclick="hideModal()" class="bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Tutup</button>
-                                <button onclick="window.print()" class="bg-brand-green text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 flex items-center gap-2"><i data-feather="printer"></i> Print</button>
-                            </div>
-                        </div>
+                       
                     </div>
                 `;
                 showModal('invoice-modal', content);
