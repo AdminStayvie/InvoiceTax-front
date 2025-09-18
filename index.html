@@ -14,6 +14,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- html2pdf.js for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" xintegrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script>
         // Konfigurasi Tailwind CSS
         tailwind.config = {
@@ -587,6 +589,91 @@
             }
         }
 
+        // --- PDF EXPORT FUNCTIONS ---
+        
+        /**
+         * Meminta kata sandi sebelum mengekspor ke PDF.
+         * @param {string} clientName Nama klien untuk nama file PDF.
+         */
+        function handlePrintRequest(clientName) {
+            const modalContent = `
+                <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-sm text-center">
+                    <h3 class="text-xl font-bold mb-4">Masukkan Kata Sandi</h3>
+                    <p class="text-gray-600 mb-6">Anda memerlukan izin untuk mengekspor invoice sebagai PDF.</p>
+                    <input type="password" id="password-input" class="form-input w-full mb-4" placeholder="Kata sandi..." autofocus>
+                    <div class="flex justify-center gap-4">
+                        <button onclick="hideModal()" class="w-full bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Batal</button>
+                        <button id="submit-password-btn" class="w-full bg-brand-green text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700">Lanjutkan</button>
+                    </div>
+                </div>
+            `;
+            showModal('password-prompt-modal', modalContent);
+            
+            const passwordInput = document.getElementById('password-input');
+            const submitButton = document.getElementById('submit-password-btn');
+
+            const submitAction = () => {
+                const password = passwordInput.value;
+                if (password === 'akaunting123') {
+                    hideModal();
+                    exportInvoiceToPdf(clientName);
+                } else {
+                    hideModal();
+                    setTimeout(() => {
+                       showStatusModal('Gagal', 'Kata sandi yang Anda masukkan salah.', false);
+                    }, 200);
+                }
+            };
+
+            submitButton.onclick = submitAction;
+            passwordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    submitAction();
+                }
+            });
+        }
+
+        /**
+         * Mengekspor konten invoice menjadi file PDF.
+         * @param {string} clientName Nama klien untuk nama file.
+         */
+        async function exportInvoiceToPdf(clientName) {
+            const element = document.getElementById('invoice-content');
+            if (!element) {
+                showStatusModal('Gagal', 'Tidak dapat menemukan konten invoice untuk diekspor.', false);
+                return;
+            }
+
+            // Sembunyikan sementara elemen yang tidak ingin dicetak
+            const elementsToHide = document.querySelectorAll('#invoice-modal .no-print');
+            elementsToHide.forEach(el => el.style.visibility = 'hidden');
+
+            const opt = {
+              margin:       [0.5, 0.2, 0.5, 0.2], // [atas, kiri, bawah, kanan] dalam inci
+              filename:     `Invoice ${clientName}.pdf`,
+              image:        { type: 'jpeg', quality: 0.98 },
+              html2canvas:  { scale: 2, useCORS: true, logging: false },
+              jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+
+            // Tampilkan loader
+            showModal('pdf-generating-modal', `
+                <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md text-center">
+                    <div class="loader mx-auto mb-4"></div>
+                    <h3 class="text-xl font-bold">Membuat PDF...</h3>
+                    <p class="text-gray-600">Mohon tunggu sebentar.</p>
+                </div>
+            `);
+
+            // Generate PDF lalu sembunyikan loader
+            await html2pdf().from(element).set(opt).save().then(() => {
+                hideModal();
+            });
+
+            // Tampilkan kembali elemen yang disembunyikan
+            elementsToHide.forEach(el => el.style.visibility = 'visible');
+        }
+
 
         // --- INVOICE MODAL ---
         async function showInvoiceModal(id, type) {
@@ -607,6 +694,9 @@
                 } else if(data.status === 'dp lunas') {
                     stamp = `<div class="invoice-stamp dp-stamp">DP Lunas</div>`;
                 }
+                
+                // Escape single quotes in client name for the onclick handler
+                const safeClientName = data.namaKlien.replace(/'/g, "\\'");
 
                 const headerDetails = isHotel ?
                     `<div>
@@ -637,7 +727,7 @@
                     <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl">
                          <div class="p-4 bg-gray-50 flex justify-end gap-3 no-print absolute top-0 right-0 rounded-tr-lg">
                             <button onclick="hideModal()" class="bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Tutup</button>
-                            <button onclick="window.print()" class="bg-brand-green text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 flex items-center gap-2"><i data-feather="printer"></i> Print</button>
+                            <button onclick="handlePrintRequest('${safeClientName}')" class="bg-brand-green text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 flex items-center gap-2"><i data-feather="download"></i> Export PDF</button>
                         </div>
                         <div id="invoice-content" class="p-10 relative overflow-hidden">
                             ${stamp}
@@ -769,5 +859,3 @@
     </script>
 </body>
 </html>
-
-
