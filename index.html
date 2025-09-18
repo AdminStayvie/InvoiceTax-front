@@ -597,8 +597,9 @@
          * @param {string} invoiceId ID invoice yang akan diekspor.
          * @param {string} type Jenis invoice ('hotel' atau 'taxplus').
          * @param {string} clientName Nama klien untuk nama file PDF.
+         * @param {string} nomorInvoice Nomor invoice untuk nama file PDF.
          */
-        function handlePrintRequest(invoiceId, type, clientName) {
+        function handlePrintRequest(invoiceId, type, clientName, nomorInvoice) {
             const modalContent = `
                 <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-sm text-center">
                     <h3 class="text-xl font-bold mb-4">Masukkan Kata Sandi</h3>
@@ -620,7 +621,7 @@
                 if (password === 'akaunting123') {
                     await showInvoiceModal(invoiceId, type);
                     setTimeout(() => {
-                        exportInvoiceToPdf(clientName, invoiceId); // Pass invoiceId
+                        exportInvoiceToPdf(clientName, invoiceId, nomorInvoice); // Pass nomorInvoice
                     }, 250);
 
                 } else {
@@ -647,8 +648,9 @@
          * Mengekspor konten invoice menjadi file PDF.
          * @param {string} clientName Nama klien untuk nama file.
          * @param {string} invoiceId ID invoice untuk nama file.
+         * @param {string} nomorInvoice Nomor invoice untuk nama file.
          */
-        async function exportInvoiceToPdf(clientName, invoiceId) {
+        async function exportInvoiceToPdf(clientName, invoiceId, nomorInvoice) {
             const element = document.getElementById('invoice-content');
             if (!element) {
                 showStatusModal('Gagal', 'Tidak dapat menemukan konten invoice untuk diekspor.', false);
@@ -660,7 +662,7 @@
 
             const opt = {
               margin:       [0.5, 0.2, 0.5, 0.2],
-              filename:     `${invoiceId} ${clientName}.pdf`,
+              filename:     `${nomorInvoice} ${clientName}.pdf`,
               image:        { type: 'jpeg', quality: 0.98 },
               html2canvas:  { scale: 2, useCORS: true, logging: false },
               jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
@@ -700,6 +702,7 @@
                 const watermark = `<div class="invoice-stamp">DRAFT</div>`;
 
                 const safeClientName = data.namaKlien.replace(/'/g, "\\'");
+                const safeNomorInvoice = data.nomorInvoice.replace(/\//g, "-"); // Ganti '/' menjadi '-' untuk nama file
 
                 const headerDetails = isHotel ?
                     `<div>
@@ -759,7 +762,7 @@
                         </div>
                         <div class="flex gap-3">
                             <button onclick="hideModal()" class="bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Tutup</button>
-                            <button onclick="handlePrintRequest('${id}', '${type}', '${safeClientName}')" class="bg-brand-green text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 flex items-center gap-2"><i data-feather="download"></i> Export PDF</button>
+                            <button onclick="handlePrintRequest('${id}', '${type}', '${safeClientName}', '${safeNomorInvoice}')" class="bg-brand-green text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 flex items-center gap-2"><i data-feather="download"></i> Export PDF</button>
                         </div>
                     </div>
                     <div id="invoice-content-wrapper" class="overflow-y-auto">
