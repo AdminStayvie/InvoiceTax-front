@@ -78,7 +78,6 @@
             border: 8px solid;
             padding: 10px 30px;
             border-radius: 10px;
-            font-size: 5rem;
             font-weight: 800;
             text-transform: uppercase;
             transform: translate(-50%, -50%) rotate(-25deg);
@@ -86,8 +85,35 @@
             letter-spacing: 0.1em;
             pointer-events: none;
             z-index: 10;
+            text-align: center;
+        }
+
+        .invoice-stamp.draft {
             color: #EF4444; /* red-500 */
             border-color: #EF4444; /* red-500 */
+            font-size: 5rem;
+        }
+
+        .invoice-stamp.asli {
+            color: #16A34A; /* green-600 */
+            border-color: #16A34A; /* green-600 */
+            opacity: 0.6;
+            padding: 20px 15px;
+            line-height: 1;
+        }
+
+        .invoice-stamp.asli .line1 {
+            font-size: 4rem;
+            font-weight: 800;
+            display: block;
+        }
+
+        .invoice-stamp.asli .line2 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: block;
+            letter-spacing: 0.05em;
+            margin-top: 4px;
         }
 
 
@@ -657,6 +683,13 @@
                 return;
             }
 
+            const watermark = element.querySelector('.invoice-stamp');
+            if (watermark) {
+                watermark.innerHTML = '<span class="line1">ASLI</span><span class="line2">ACC BY ACCOUNTING</span>';
+                watermark.classList.remove('draft');
+                watermark.classList.add('asli');
+            }
+
             const elementsToHide = document.querySelectorAll('#invoice-modal .no-print');
             elementsToHide.forEach(el => el.style.visibility = 'hidden');
 
@@ -678,11 +711,9 @@
 
             await html2pdf().from(element).set(opt).save().then(() => {
                 hideModal();
-                // Tampilkan kembali modal invoice setelah PDF dibuat
+                // Tampilkan kembali modal invoice setelah PDF dibuat, yang akan mereset watermark
                  showInvoiceModal(invoiceId, window.location.hash.includes('hotel') ? 'hotel' : 'taxplus');
             });
-
-            elementsToHide.forEach(el => el.style.visibility = 'visible');
         }
 
 
@@ -699,7 +730,7 @@
                 const isHotel = type === 'hotel';
                 const logoUrl = isHotel ? `${API_BASE_URL.replace('/api', '')}/Logo_stayvie.png` : `${API_BASE_URL.replace('/api', '')}/Logo.png`;
                 
-                const watermark = `<div class="invoice-stamp">DRAFT</div>`;
+                const watermark = `<div class="invoice-stamp draft">DRAFT</div>`;
 
                 const safeClientName = data.namaKlien.replace(/'/g, "\\'");
                 const safeNomorInvoice = data.nomorInvoice.replace(/\//g, "-"); // Ganti '/' menjadi '-' untuk nama file
