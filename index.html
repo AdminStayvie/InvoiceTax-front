@@ -73,21 +73,22 @@
         
         .invoice-stamp {
             position: absolute;
-            top: 60px;
-            right: 40px;
-            border: 5px solid;
-            padding: 8px 20px;
-            border-radius: 8px;
-            font-size: 2.5rem;
-            font-weight: 700;
+            top: 50%;
+            left: 50%;
+            border: 8px solid;
+            padding: 10px 30px;
+            border-radius: 10px;
+            font-size: 5rem;
+            font-weight: 800;
             text-transform: uppercase;
-            transform: rotate(15deg);
-            opacity: 0.8;
+            transform: translate(-50%, -50%) rotate(-25deg);
+            opacity: 0.15;
             letter-spacing: 0.1em;
             pointer-events: none;
+            z-index: 10;
+            color: #EF4444; /* red-500 */
+            border-color: #EF4444; /* red-500 */
         }
-        .paid-stamp { color: #38A169; border-color: #38A169; }
-        .dp-stamp { color: #DD6B20; border-color: #DD6B20; font-size: 2rem; }
 
 
         /* Print-specific styles */
@@ -617,21 +618,17 @@
             const submitAction = async () => {
                 const password = passwordInput.value;
                 if (password === 'akaunting123') {
-                    // Muat ulang modal invoice untuk memastikan kontennya ada di DOM
                     await showInvoiceModal(invoiceId, type);
-                    
-                    // Beri jeda singkat agar DOM sempat diperbarui
                     setTimeout(() => {
-                        exportInvoiceToPdf(clientName);
+                        exportInvoiceToPdf(clientName, invoiceId); // Pass invoiceId
                     }, 250);
 
                 } else {
                     hideModal();
                     setTimeout(() => {
                        showStatusModal('Gagal', 'Kata sandi yang Anda masukkan salah.', false);
-                        // Setelah 1.5 detik, tampilkan kembali modal invoice
                        setTimeout(() => {
-                           hideModal(); // Sembunyikan modal error
+                           hideModal();
                            showInvoiceModal(invoiceId, type);
                        }, 1500);
                     }, 200);
@@ -649,27 +646,26 @@
         /**
          * Mengekspor konten invoice menjadi file PDF.
          * @param {string} clientName Nama klien untuk nama file.
+         * @param {string} invoiceId ID invoice untuk nama file.
          */
-        async function exportInvoiceToPdf(clientName) {
+        async function exportInvoiceToPdf(clientName, invoiceId) {
             const element = document.getElementById('invoice-content');
             if (!element) {
                 showStatusModal('Gagal', 'Tidak dapat menemukan konten invoice untuk diekspor.', false);
                 return;
             }
 
-            // Sembunyikan sementara elemen yang tidak ingin dicetak
             const elementsToHide = document.querySelectorAll('#invoice-modal .no-print');
             elementsToHide.forEach(el => el.style.visibility = 'hidden');
 
             const opt = {
-              margin:       [0.5, 0.2, 0.5, 0.2], // [atas, kiri, bawah, kanan] dalam inci
-              filename:     `Invoice ${clientName}.pdf`,
+              margin:       [0.5, 0.2, 0.5, 0.2],
+              filename:     `${invoiceId} ${clientName}.pdf`,
               image:        { type: 'jpeg', quality: 0.98 },
               html2canvas:  { scale: 2, useCORS: true, logging: false },
               jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
             };
 
-            // Tampilkan loader
             showModal('pdf-generating-modal', `
                 <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md text-center">
                     <div class="loader mx-auto mb-4"></div>
@@ -678,12 +674,12 @@
                 </div>
             `);
 
-            // Generate PDF lalu sembunyikan loader
             await html2pdf().from(element).set(opt).save().then(() => {
                 hideModal();
+                // Tampilkan kembali modal invoice setelah PDF dibuat
+                 showInvoiceModal(invoiceId, window.location.hash.includes('hotel') ? 'hotel' : 'taxplus');
             });
 
-            // Tampilkan kembali elemen yang disembunyikan
             elementsToHide.forEach(el => el.style.visibility = 'visible');
         }
 
@@ -701,14 +697,8 @@
                 const isHotel = type === 'hotel';
                 const logoUrl = isHotel ? `${API_BASE_URL.replace('/api', '')}/Logo_stayvie.png` : `${API_BASE_URL.replace('/api', '')}/Logo.png`;
                 
-                let stamp = '';
-                if(data.status === 'lunas') {
-                    stamp = `<div class="invoice-stamp paid-stamp">Lunas</div>`;
-                } else if(data.status === 'dp lunas') {
-                    stamp = `<div class="invoice-stamp dp-stamp">DP Lunas</div>`;
-                }
-                
-                // Escape single quotes in client name for the onclick handler
+                const watermark = `<div class="invoice-stamp">DRAFT</div>`;
+
                 const safeClientName = data.namaKlien.replace(/'/g, "\\'");
 
                 const headerDetails = isHotel ?
@@ -735,15 +725,46 @@
                         <p><span class="font-semibold w-24 inline-block">No. Rekening</span>: 4649989980</p>
                         <p><span class="font-semibold w-24 inline-block">Atas Nama</span>: Octavianus Stevie Lianto</p>
                     </div>`;
+                
+                const summaryHtml = `
+                    <table class="w-full mt-6">
+                         <tfoot>
+                            <tr>
+                                <td class="py-2 font-semibold">SUBTOTAL</td>
+                                <td class="text-right py-2 font-semibold w-2/5">${formatRupiah(total)}</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 font-semibold">TOTAL DIBAYAR</td>
+                                <td class="text-right py-2 font-semibold w-2/5 text-green-600">${formatRupiah(totalPaid)}</td>
+                            </tr>
+                            <tr class="border-t-2 border-gray-300">
+                                <td class="py-4 font-bold text-lg">SISA TAGIHAN</td>
+                                <td class="text-right py-4 font-bold text-lg w-2/5 text-brand-dark">${formatRupiah(remaining)}</td>
+                            </tr>
+                        </tfoot>
+                    </table>`;
 
                 const content = `
-                    <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl">
-                         <div class="p-4 bg-gray-50 flex justify-end gap-3 no-print absolute top-0 right-0 rounded-tr-lg">
+                <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+                    <div class="p-4 bg-gray-50 flex justify-between items-center no-print border-b">
+                        <div class="flex-1">
+                             ${data.status !== 'lunas' ? `
+                                <div class="flex items-center gap-3">
+                                    <h4 class="text-sm font-semibold text-gray-600">Tambah Pembayaran:</h4>
+                                    <input type="number" id="new-payment-amount" placeholder="Nominal" class="form-input w-40">
+                                    <input type="date" id="new-payment-date" value="${formatDateForInput(new Date())}" class="form-input w-40">
+                                    <button id="add-payment-btn" onclick="addPayment('${id}', '${type}')" class="bg-brand-dark text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-800">Simpan</button>
+                                </div>
+                            ` : `<p class="text-sm font-semibold text-green-600">Invoice ini sudah lunas.</p>`}
+                        </div>
+                        <div class="flex gap-3">
                             <button onclick="hideModal()" class="bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Tutup</button>
                             <button onclick="handlePrintRequest('${id}', '${type}', '${safeClientName}')" class="bg-brand-green text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 flex items-center gap-2"><i data-feather="download"></i> Export PDF</button>
                         </div>
-                        <div id="invoice-content" class="p-10 relative overflow-hidden">
-                            ${stamp}
+                    </div>
+                    <div id="invoice-content-wrapper" class="overflow-y-auto">
+                        <div id="invoice-content" class="p-10 relative overflow-hidden bg-white">
+                            ${watermark}
                             <header class="flex justify-between items-start mb-10">
                                 <div class="flex items-center gap-5">
                                     <img src="${logoUrl}" alt="Logo" class="h-20">
@@ -766,84 +787,57 @@
                                 </div>
                             </div>
                             
-                           <div class="grid grid-cols-12 gap-8">
-                                <div class="col-span-8">
-                                     <h3 class="text-sm font-semibold text-gray-600 mb-2">Rincian Tagihan:</h3>
-                                    <table class="w-full mb-4">
-                                        <thead class="border-b-2 border-gray-300">
-                                            <tr>
-                                                <th class="text-left py-2 text-sm uppercase text-gray-500">Deskripsi</th>
-                                                <th class="text-right py-2 text-sm uppercase text-gray-500">Kuantitas</th>
-                                                <th class="text-right py-2 text-sm uppercase text-gray-500">Harga Satuan</th>
-                                                <th class="text-right py-2 text-sm uppercase text-gray-500">Jumlah</th>
+                            <h3 class="text-sm font-semibold text-gray-600 mb-2">Rincian Tagihan:</h3>
+                            <table class="w-full mb-4">
+                                <thead class="border-b-2 border-gray-300">
+                                    <tr>
+                                        <th class="text-left py-2 text-sm uppercase text-gray-500">Deskripsi</th>
+                                        <th class="text-right py-2 text-sm uppercase text-gray-500">Kuantitas</th>
+                                        <th class="text-right py-2 text-sm uppercase text-gray-500">Harga Satuan</th>
+                                        <th class="text-right py-2 text-sm uppercase text-gray-500">Jumlah</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${data.items.map(item => `
+                                        <tr class="border-b border-gray-100">
+                                            <td class="py-3">${item.deskripsi}</td>
+                                            <td class="text-right py-3">${item.kuantitas}</td>
+                                            <td class="text-right py-3">${formatRupiah(item.harga)}</td>
+                                            <td class="text-right py-3 font-semibold">${formatRupiah(item.total)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                            
+                             <h3 class="text-sm font-semibold text-gray-600 mb-2 mt-8">Rincian Pembayaran:</h3>
+                             ${(data.payments && data.payments.length > 0) ? `
+                                <table class="w-full mb-4">
+                                    <thead class="border-b-2 border-gray-300">
+                                        <tr>
+                                            <th class="text-left py-2 text-sm uppercase text-gray-500">Tanggal</th>
+                                            <th class="text-left py-2 text-sm uppercase text-gray-500">Keterangan</th>
+                                            <th class="text-right py-2 text-sm uppercase text-gray-500">Jumlah</th>
+                                            <th class="text-right py-2 text-sm uppercase text-gray-500 no-print">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${data.payments.map(p => `
+                                            <tr class="border-b border-gray-100">
+                                                <td class="py-2">${formatTanggal(p.date)}</td>
+                                                <td class="py-2">${p.notes}</td>
+                                                <td class="text-right py-2">${formatRupiah(p.amount)}</td>
+                                                <td class="text-right py-2 no-print"><button onclick="confirmDeletePayment('${id}', '${type}', '${p._id}', ${p.amount})" class="text-red-500 hover:text-red-700"><i data-feather="x" class="w-4 h-4"></i></button></td>
                                             </tr>
-                                        </thead>
-                                        <tbody>
-                                            ${data.items.map(item => `
-                                                <tr class="border-b border-gray-100">
-                                                    <td class="py-3">${item.deskripsi}</td>
-                                                    <td class="text-right py-3">${item.kuantitas}</td>
-                                                    <td class="text-right py-3">${formatRupiah(item.harga)}</td>
-                                                    <td class="text-right py-3 font-semibold">${formatRupiah(item.total)}</td>
-                                                </tr>
-                                            `).join('')}
-                                        </tbody>
-                                    </table>
-                                     <h3 class="text-sm font-semibold text-gray-600 mb-2 mt-8">Rincian Pembayaran:</h3>
-                                     ${(data.payments && data.payments.length > 0) ? `
-                                        <table class="w-full mb-10">
-                                            <thead class="border-b-2 border-gray-300">
-                                                <tr>
-                                                    <th class="text-left py-2 text-sm uppercase text-gray-500">Tanggal</th>
-                                                    <th class="text-left py-2 text-sm uppercase text-gray-500">Keterangan</th>
-                                                    <th class="text-right py-2 text-sm uppercase text-gray-500">Jumlah</th>
-                                                    <th class="text-right py-2 text-sm uppercase text-gray-500 no-print">Aksi</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                ${data.payments.map(p => `
-                                                    <tr class="border-b border-gray-100">
-                                                        <td class="py-2">${formatTanggal(p.date)}</td>
-                                                        <td class="py-2">${p.notes}</td>
-                                                        <td class="text-right py-2">${formatRupiah(p.amount)}</td>
-                                                        <td class="text-right py-2 no-print"><button onclick="confirmDeletePayment('${id}', '${type}', '${p._id}', ${p.amount})" class="text-red-500 hover:text-red-700"><i data-feather="x" class="w-4 h-4"></i></button></td>
-                                                    </tr>
-                                                `).join('')}
-                                            </tbody>
-                                        </table>
-                                    ` : `<p class="text-sm text-gray-500 mb-10">Belum ada pembayaran.</p>`}
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            ` : `<p class="text-sm text-gray-500 mb-6">Belum ada pembayaran.</p>`}
+                            
+                            <div class="flex justify-end">
+                                <div class="w-full max-w-sm">
+                                    ${summaryHtml}
                                 </div>
-                                <div class="col-span-4 pt-8">
-                                    <div class="bg-gray-50 p-4 rounded-lg">
-                                        <table class="w-full">
-                                             <tfoot>
-                                                <tr>
-                                                    <td class="py-2 font-semibold">SUBTOTAL</td>
-                                                    <td class="text-right py-2 font-semibold w-2/5">${formatRupiah(total)}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-2 font-semibold">TOTAL DIBAYAR</td>
-                                                    <td class="text-right py-2 font-semibold w-2/5 text-green-600">${formatRupiah(totalPaid)}</td>
-                                                </tr>
-                                                <tr class="border-t-2 border-gray-200">
-                                                    <td class="py-4 font-bold text-lg">SISA TAGIHAN</td>
-                                                    <td class="text-right py-4 font-bold text-lg w-2/5 text-brand-dark">${formatRupiah(remaining)}</td>
-                                                </tr>
-                                            </tfoot>
-                                        </table>
-                                    </div>
-                                    <div class="mt-4 no-print">
-                                    ${data.status !== 'lunas' ? `
-                                        <h4 class="text-sm font-semibold text-gray-600 mb-2">Tambah Pembayaran Baru</h4>
-                                        <div class="space-y-3">
-                                            <input type="number" id="new-payment-amount" placeholder="Nominal" class="form-input">
-                                            <input type="date" id="new-payment-date" value="${formatDateForInput(new Date())}" class="form-input">
-                                            <button id="add-payment-btn" onclick="addPayment('${id}', '${type}')" class="w-full bg-brand-dark text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-800">Simpan Pembayaran</button>
-                                        </div>
-                                    ` : `<p class="text-sm text-center font-semibold text-green-600 bg-green-50 p-3 rounded-lg">Invoice ini sudah lunas.</p>`}
-                                    </div>
-                                </div>
-                           </div>
+                            </div>
 
                             <div class="mt-10 pt-6 border-t border-gray-200">
                                 <h3 class="text-sm font-semibold text-gray-600 mb-2">Tujuan Pembayaran:</h3>
@@ -854,9 +848,8 @@
                                 <p>Terima kasih atas kepercayaan Anda.</p>
                             </footer>
                         </div>
-                       
                     </div>
-                `;
+                </div>`;
                 showModal('invoice-modal', content);
                 feather.replace();
             } catch (error) {
