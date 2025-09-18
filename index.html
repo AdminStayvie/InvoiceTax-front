@@ -593,16 +593,18 @@
         
         /**
          * Meminta kata sandi sebelum mengekspor ke PDF.
+         * @param {string} invoiceId ID invoice yang akan diekspor.
+         * @param {string} type Jenis invoice ('hotel' atau 'taxplus').
          * @param {string} clientName Nama klien untuk nama file PDF.
          */
-        function handlePrintRequest(clientName) {
+        function handlePrintRequest(invoiceId, type, clientName) {
             const modalContent = `
                 <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-sm text-center">
                     <h3 class="text-xl font-bold mb-4">Masukkan Kata Sandi</h3>
                     <p class="text-gray-600 mb-6">Anda memerlukan izin untuk mengekspor invoice sebagai PDF.</p>
                     <input type="password" id="password-input" class="form-input w-full mb-4" placeholder="Kata sandi..." autofocus>
                     <div class="flex justify-center gap-4">
-                        <button onclick="hideModal()" class="w-full bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Batal</button>
+                        <button onclick="showInvoiceModal('${invoiceId}', '${type}')" class="w-full bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Batal</button>
                         <button id="submit-password-btn" class="w-full bg-brand-green text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700">Lanjutkan</button>
                     </div>
                 </div>
@@ -612,15 +614,26 @@
             const passwordInput = document.getElementById('password-input');
             const submitButton = document.getElementById('submit-password-btn');
 
-            const submitAction = () => {
+            const submitAction = async () => {
                 const password = passwordInput.value;
                 if (password === 'akaunting123') {
-                    hideModal();
-                    exportInvoiceToPdf(clientName);
+                    // Muat ulang modal invoice untuk memastikan kontennya ada di DOM
+                    await showInvoiceModal(invoiceId, type);
+                    
+                    // Beri jeda singkat agar DOM sempat diperbarui
+                    setTimeout(() => {
+                        exportInvoiceToPdf(clientName);
+                    }, 250);
+
                 } else {
                     hideModal();
                     setTimeout(() => {
                        showStatusModal('Gagal', 'Kata sandi yang Anda masukkan salah.', false);
+                        // Setelah 1.5 detik, tampilkan kembali modal invoice
+                       setTimeout(() => {
+                           hideModal(); // Sembunyikan modal error
+                           showInvoiceModal(invoiceId, type);
+                       }, 1500);
                     }, 200);
                 }
             };
@@ -727,7 +740,7 @@
                     <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl">
                          <div class="p-4 bg-gray-50 flex justify-end gap-3 no-print absolute top-0 right-0 rounded-tr-lg">
                             <button onclick="hideModal()" class="bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">Tutup</button>
-                            <button onclick="handlePrintRequest('${safeClientName}')" class="bg-brand-green text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 flex items-center gap-2"><i data-feather="download"></i> Export PDF</button>
+                            <button onclick="handlePrintRequest('${id}', '${type}', '${safeClientName}')" class="bg-brand-green text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 flex items-center gap-2"><i data-feather="download"></i> Export PDF</button>
                         </div>
                         <div id="invoice-content" class="p-10 relative overflow-hidden">
                             ${stamp}
@@ -859,3 +872,4 @@
     </script>
 </body>
 </html>
+
