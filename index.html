@@ -71,7 +71,8 @@
             box-shadow: 0 0 0 2px rgba(74, 85, 104, 0.4);
         }
         
-        .invoice-stamp {
+        /* Watermark di Tengah */
+        .invoice-watermark {
             position: absolute;
             top: 50%;
             left: 50%;
@@ -81,39 +82,68 @@
             font-weight: 800;
             text-transform: uppercase;
             transform: translate(-50%, -50%) rotate(-25deg);
-            opacity: 0.15;
             letter-spacing: 0.1em;
             pointer-events: none;
             z-index: 10;
             text-align: center;
         }
 
-        .invoice-stamp.draft {
+        .invoice-watermark.draft {
             color: #EF4444; /* red-500 */
-            border-color: #EF4444; /* red-500 */
+            border-color: #EF4444;
             font-size: 5rem;
+            opacity: 0.15;
         }
 
-        .invoice-stamp.asli {
+        .invoice-watermark.asli {
             color: #16A34A; /* green-600 */
-            border-color: #16A34A; /* green-600 */
+            border-color: #16A34A;
             opacity: 0.6;
             padding: 20px 15px;
             line-height: 1;
         }
 
-        .invoice-stamp.asli .line1 {
+        .invoice-watermark.asli .line1 {
             font-size: 4rem;
             font-weight: 800;
             display: block;
         }
 
-        .invoice-stamp.asli .line2 {
+        .invoice-watermark.asli .line2 {
             font-size: 1.2rem;
             font-weight: 600;
             display: block;
             letter-spacing: 0.05em;
             margin-top: 4px;
+        }
+
+        /* Stempel Status di Kanan Atas */
+        .status-stamp {
+            position: absolute;
+            top: 60px;
+            right: 40px;
+            border: 5px solid;
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            transform: rotate(15deg);
+            opacity: 0.8;
+            letter-spacing: 0.1em;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .status-stamp.lunas {
+            color: #16A34A;
+            border-color: #16A34A;
+        }
+
+        .status-stamp.dp-lunas {
+            color: #DD6B20;
+            border-color: #DD6B20;
+            font-size: 2rem;
         }
 
 
@@ -683,7 +713,7 @@
                 return;
             }
 
-            const watermark = element.querySelector('.invoice-stamp');
+            const watermark = element.querySelector('.invoice-watermark');
             if (watermark) {
                 watermark.innerHTML = '<span class="line1">ASLI</span><span class="line2">ACC BY ACCOUNTING</span>';
                 watermark.classList.remove('draft');
@@ -711,8 +741,7 @@
 
             await html2pdf().from(element).set(opt).save().then(() => {
                 hideModal();
-                // Tampilkan kembali modal invoice setelah PDF dibuat, yang akan mereset watermark
-                 showInvoiceModal(invoiceId, window.location.hash.includes('hotel') ? 'hotel' : 'taxplus');
+                showStatusModal('Sukses', 'Invoice berhasil diekspor sebagai PDF.', true);
             });
         }
 
@@ -730,7 +759,18 @@
                 const isHotel = type === 'hotel';
                 const logoUrl = isHotel ? `${API_BASE_URL.replace('/api', '')}/Logo_stayvie.png` : `${API_BASE_URL.replace('/api', '')}/Logo.png`;
                 
-                const watermark = `<div class="invoice-stamp draft">DRAFT</div>`;
+                // Logic for stamps and watermarks
+                let statusStamp = '';
+                if (data.status === 'lunas') {
+                    statusStamp = `<div class="status-stamp lunas">Lunas</div>`;
+                } else if (data.status === 'dp lunas') {
+                    statusStamp = `<div class="status-stamp dp-lunas">DP Lunas</div>`;
+                }
+
+                // Watermark is always present in preview as DRAFT
+                const watermark = `<div class="invoice-watermark draft">DRAFT</div>`;
+
+                const finalStampAndWatermark = statusStamp + watermark; // Combine them
 
                 const safeClientName = data.namaKlien.replace(/'/g, "\\'");
                 const safeNomorInvoice = data.nomorInvoice.replace(/\//g, "-"); // Ganti '/' menjadi '-' untuk nama file
@@ -798,7 +838,7 @@
                     </div>
                     <div id="invoice-content-wrapper" class="overflow-y-auto">
                         <div id="invoice-content" class="p-10 relative overflow-hidden bg-white">
-                            ${watermark}
+                            ${finalStampAndWatermark}
                             <header class="flex justify-between items-start mb-10">
                                 <div class="flex items-center gap-5">
                                     <img src="${logoUrl}" alt="Logo" class="h-20">
