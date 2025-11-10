@@ -22,6 +22,48 @@ const formatDateForInput = (d) => {
     return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
 };
 
+const escapeHtml = (value = '') => {
+    return String(value ?? '').replace(/[&<>"']/g, (char) => {
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+        return map[char] || char;
+    });
+};
+
+const buildItemRow = (item = null, isFirstRow = false, includeRemoveButton = false) => {
+    const deskripsi = escapeHtml(item?.deskripsi ?? '');
+    const kuantitas = item?.kuantitas ?? 1;
+    const harga = item?.harga ?? 0;
+    const totalValue = item?.total ?? (kuantitas * harga);
+    const formattedTotal = formatRupiah(totalValue);
+    return `
+        <div class="item-row grid grid-cols-12 gap-3 items-end">
+            <div class="col-span-5">
+                ${isFirstRow ? '<label class="form-label">Deskripsi</label>' : ''}
+                <input type="text" name="deskripsi" class="form-input item-deskripsi" value="${deskripsi}" required>
+            </div>
+            <div class="col-span-2">
+                ${isFirstRow ? '<label class="form-label">Kuantitas</label>' : ''}
+                <input type="number" name="kuantitas" value="${kuantitas}" class="form-input item-kuantitas" required>
+            </div>
+            <div class="col-span-2">
+                ${isFirstRow ? '<label class="form-label">Harga Satuan</label>' : ''}
+                <input type="number" name="harga" value="${harga}" class="form-input item-harga" required>
+            </div>
+            <div class="col-span-2">
+                ${isFirstRow ? '<label class="form-label">Total</label>' : ''}
+                <input type="text" name="total" class="form-input bg-gray-100" value="${formattedTotal}" readonly>
+            </div>
+            ${includeRemoveButton ? `
+                <div class="col-span-1">
+                    <button type="button" class="remove-item-btn text-red-500 hover:text-red-700 p-2">
+                        <i data-feather="trash-2"></i>
+                    </button>
+                </div>
+            ` : '<div class="col-span-1"></div>'}
+        </div>
+    `;
+};
+
 // --- Logika Modal & Notifikasi ---
 function showModal(id, content) {
     hideModal();
@@ -85,8 +127,14 @@ const routes = {
 
 function router() {
     const path = window.location.hash.replace('#', '') || '/';
+    const normalizedPath = path.startsWith('/edit/') ? '/new' : path;
+    renderSidebar(normalizedPath);
+    if (path.startsWith('/edit/')) {
+        const invoiceId = path.split('/')[2];
+        renderForm('edit', invoiceId);
+        return;
+    }
     (routes[path] || routes['/'])();
-    renderSidebar(path);
 }
 
 // --- RENDERING FUNCTIONS ---
