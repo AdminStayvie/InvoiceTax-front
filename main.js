@@ -137,6 +137,10 @@ function router() {
     (routes[path] || routes['/'])();
 }
 
+function openEditInvoice(id) {
+    window.location.hash = `/edit/${id}`;
+}
+
 // --- RENDERING FUNCTIONS ---
 function renderSidebar(activePath) {
     const sidebar = document.getElementById('sidebar');
@@ -224,6 +228,7 @@ async function fetchInvoices() {
                 <td class="p-4 font-semibold">${formatRupiah(inv.items.reduce((sum, i) => sum + i.total, 0))}</td>
                 <td class="p-4">
                     <div class="flex items-center gap-2">
+                        <button onclick="openEditInvoice('${inv._id}')" class="text-gray-400 hover:text-brand-green" title="Edit Invoice"><i data-feather="edit-3" class="w-5 h-5"></i></button>
                         <button onclick="showInvoiceModal('${inv._id}')" class="text-gray-400 hover:text-brand-green" title="Print Invoice"><i data-feather="printer" class="w-5 h-5"></i></button>
                         <button onclick="confirmDelete('${inv._id}', '${inv.namaKlien}')" class="text-gray-400 hover:text-red-600" title="Hapus Invoice"><i data-feather="trash-2" class="w-5 h-5"></i></button>
                     </div>
@@ -237,7 +242,37 @@ async function fetchInvoices() {
 }
 
 // --- PAGE: ENTRY FORM ---
-function renderForm() {
+async function renderForm(mode = 'new', invoiceId = null, invoiceData = null) {
+    const isEdit = mode === 'edit';
+    if (isEdit && invoiceId && !invoiceData) {
+        renderContent('Edit Invoice', 'Menyiapkan detail invoice...', `
+            <div class="bg-white p-6 rounded-lg shadow-md max-w-4xl mx-auto">
+                <div class="flex justify-center py-10">
+                    <div class="loader"></div>
+                </div>
+            </div>
+        `);
+        try {
+            const res = await fetch(`${API_BASE_URL}/invoices/${invoiceId}`);
+            if (!res.ok) throw new Error('Gagal memuat data invoice.');
+            const data = await res.json();
+            return renderForm(mode, invoiceId, data);
+        } catch (error) {
+            showStatusModal('Gagal', error.message || 'Gagal memuat data invoice untuk diedit.', false);
+            window.location.hash = '/';
+        }
+        return;
+    }
+
+    const invoice = invoiceData || null;
+    const itemRows = invoice?.items?.length ? invoice.items : [];
+    const itemListContent = itemRows.length
+        ? itemRows.map((item, index) => buildItemRow(item, index === 0, index > 0)).join('')
+        : buildItemRow(null, true, false);
+    const title = isEdit ? 'Edit Invoice' : 'Buat Invoice Baru';
+    const subtitle = isEdit ? 'Ubah detail invoice sesuai kebutuhan.' : 'Isi detail di bawah untuk membuat invoice.';
+    const submitLabel = isEdit ? 'Perbarui Invoice' : 'Simpan Invoice';
+
     const content = `
         <div class="bg-white p-6 rounded-lg shadow-md max-w-4xl mx-auto">
             <form id="invoice-form" class="space-y-6">
@@ -246,7 +281,7 @@ function renderForm() {
                         <label for="namaKlien" class="form-label">Nama Klien</label>
                         <input type="text" id="namaKlien" name="namaKlien" class="form-input" required>
                     </div>
-                     <div>
+                    <div>
                         <label for="noTelepon" class="form-label">No. Telepon</label>
                         <input type="tel" id="noTelepon" name="noTelepon" class="form-input" required>
                     </div>
@@ -256,28 +291,26 @@ function renderForm() {
                     </div>
                 </div>
                 <div id="item-list" class="space-y-4 pt-4 border-t">
-                    <!-- Item pertama -->
-                    <div class="item-row grid grid-cols-12 gap-3 items-end">
-                        <div class="col-span-5"><label class="form-label">Deskripsi</label><input type="text" name="deskripsi" class="form-input item-deskripsi" required></div>
-                        <div class="col-span-2"><label class="form-label">Kuantitas</label><input type="number" name="kuantitas" value="1" class="form-input item-kuantitas" required></div>
-                        <div class="col-span-2"><label class="form-label">Harga Satuan</label><input type="number" name="harga" class="form-input item-harga" required></div>
-                        <div class="col-span-2"><label class="form-label">Total</label><input type="text" name="total" class="form-input bg-gray-100" readonly></div>
-                        <div class="col-span-1"></div>
-                    </div>
+                    ${itemListContent}
                 </div>
                 <button type="button" id="add-item-btn" class="text-sm font-semibold text-brand-green hover:text-green-700 flex items-center gap-2"><i data-feather="plus"></i> Tambah Item</button>
                 <div class="flex justify-end pt-6 border-t">
-                    <button type="submit" class="bg-brand-dark text-white font-bold py-2 px-6 rounded-lg hover:bg-gray-800 transition-colors">Simpan Invoice</button>
+                    <button type="submit" class="bg-brand-dark text-white font-bold py-2 px-6 rounded-lg hover:bg-gray-800 transition-colors">${submitLabel}</button>
                 </div>
             </form>
         </div>
     `;
-    renderContent('Buat Invoice Baru', 'Isi detail di bawah untuk membuat invoice.', content);
-    document.getElementById('tanggalInvoice').value = formatDateForInput(new Date());
-    attachFormEventListeners();
+    renderContent(title, subtitle, content);
+    document.getElementById('namaKlien').value = invoice?.namaKlien ?? '';
+    document.getElementById('noTelepon').value = invoice?.noTelepon ?? '';
+    const tanggalInput = document.getElementById('tanggalInvoice');
+    tanggalInput.value = invoice?.tanggalInvoice ? formatDateForInput(invoice.tanggalInvoice) : formatDateForInput(new Date());
+    feather.replace();
+    const activeInvoiceId = invoice?._id ?? invoiceId;
+    attachFormEventListeners({ mode, invoiceId: activeInvoiceId });
 }
 
-function attachFormEventListeners() {
+function attachFormEventListeners({ mode = 'new', invoiceId = '' } = {}) {
     const form = document.getElementById('invoice-form');
     const itemList = document.getElementById('item-list');
 
@@ -329,13 +362,16 @@ function attachFormEventListeners() {
         };
 
         try {
-            const res = await fetch(`${API_BASE_URL}/invoices`, {
-                method: 'POST',
+            const isEditMode = mode === 'edit' && invoiceId;
+            const url = isEditMode ? `${API_BASE_URL}/invoices/${invoiceId}` : `${API_BASE_URL}/invoices`;
+            const res = await fetch(url, {
+                method: isEditMode ? 'PUT' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-            if (!res.ok) throw new Error('Gagal menyimpan invoice.');
-            showStatusModal('Sukses', 'Invoice baru berhasil disimpan!', true);
+            if (!res.ok) throw new Error(isEditMode ? 'Gagal memperbarui invoice.' : 'Gagal menyimpan invoice.');
+            const successMessage = isEditMode ? 'Invoice berhasil diperbarui!' : 'Invoice baru berhasil disimpan!';
+            showStatusModal('Sukses', successMessage, true);
             setTimeout(() => { hideModal(); window.location.hash = '/'; }, 1500);
         } catch (error) {
             showStatusModal('Gagal', error.message, false);
